@@ -13,12 +13,6 @@ source("../scripts/viridis.R")
 source("../scripts/ggprob.R")
 ```
 
-# Group members
-* Hareem 
-* Vishnu
-* Sanjay
-* Sumin 
-
 # Introduction
     
 90% of people globally have lost money while investing in the stock market. One of the main reasons has to do with the lack of knowledge about risk. Hence, our findings aim to aid investors in understanding volatility of stocks to make more informed decisions on purchasing and trading stocks. Specifically, it can guide investors in times of risk. Higher volatility in the market is typically associated with greater risk and leads to more uncertainty. In this case, with accurate stock data, an investor can adjust their strategy accordingly. Furthermore, having volatility information between earning and non-earning seasons helps investors analyze patterns and market fluctuations between long time frames in order to predict the optimal allocations for their investments. 
@@ -536,4 +530,5 @@ In this project, we analyzed stock price fluctuations in earning vs non-earning 
 The primary conclusion we can draw from our analysis is that overall, there is no significant difference between the earning vs non-earning period for each company. This can be explained by comparing the means of the two periods where the p-values are at a range that accept the null hypothesis across all the companies. Since the p-values of all five FAANG companies are above 0.05 (the significance level), we don’t have strong statistical evidence to reject the null hypothesis that there is no significant difference between the means of the two groups for a given company. Additionally, if we compare the median line of the earning period to the non-earning period, the line, if dotted across, lies in the boxplot range of the non-earning period across all companies except Netflix. This shows that for the most part, these likely isn’t a significant difference between the two groups. Lastly, if we look at the average fluctuation in prices by year in the line graphs, we can see that there is no clear pattern indicating a trend that either of the two periods follow. This supports the analysis conclusion that we find no significant difference between the two periods. 
 
 # References
+# Earnings-Season-Stock-Price-Volatility-Analysis
 # Earnings-Season-Stock-Price-Volatility-Analysis
