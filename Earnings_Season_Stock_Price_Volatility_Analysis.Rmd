@@ -50,31 +50,31 @@ In the report's next phases, we will analyze stock price changes for FAANG compa
 We first read stock price data from our company csv files, and only include data from 2012-5-18 to 2020-08-18 (This is the earliest and latest dates for which we have readings from every company). We then create summary tables that group by year and period and calculate the average absolute percentage change from Open price to Close price for that period.
 
 ```{r, include = FALSE}
-Amazon_data = read_csv("~/Desktop/stat240/final_project/data/Amazon.csv")
+Amazon_data = read_csv("../data/Amazon.csv")
 tidy_Amazon = Amazon_data %>%
   filter(between(Date, as.Date("2012-05-18"), as.Date("2020-08-18")))
 ```
 
 ```{r, include = FALSE}
-Apple_data = read_csv("~/Desktop/stat240/final_project/data/Apple.csv")
+Apple_data = read_csv("../data/Apple.csv")
 tidy_Apple = Apple_data %>%
   filter(between(Date, as.Date("2012-05-18"), as.Date("2020-08-18")))
 ```
 
 ```{r, include = FALSE}
-Facebook_data = read_csv("~/Desktop/stat240/final_project/data/Facebook.csv")
+Facebook_data = read_csv("../data/Facebook.csv")
 tidy_Facebook = Facebook_data %>%
   filter(between(Date, as.Date("2012-05-18"), as.Date("2020-08-18")))
 ```
 
 ```{r, include = FALSE}
-Google_data = read_csv("~/Desktop/stat240/final_project/data/Facebook.csv")
+Google_data = read_csv("../data/Facebook.csv")
 tidy_Google = Google_data %>%
   filter(between(Date, as.Date("2012-05-18"), as.Date("2020-08-18")))
 ```
 
 ```{r, include = FALSE}
-Netflix_data = read_csv("~/Desktop/stat240/final_project/data/Netflix.csv")
+Netflix_data = read_csv("../data/Netflix.csv")
 tidy_Netflix = Netflix_data %>%
   filter(between(Date, as.Date("2012-05-18"), as.Date("2020-08-18")))
 ```
