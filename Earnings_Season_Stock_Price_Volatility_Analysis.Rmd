@@ -1,0 +1,531 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+source("../scripts/viridis.R")
+source("../scripts/ggprob.R")
+```
+
+
+# Introduction
+    
+90% of people globally have lost money while investing in the stock market. One of the main reasons has to do with the lack of knowledge about risk. Hence, our findings aim to aid investors in understanding volatility of stocks to make more informed decisions on purchasing and trading stocks. Specifically, it can guide investors in times of risk. Higher volatility in the market is typically associated with greater risk and leads to more uncertainty. In this case, with accurate stock data, an investor can adjust their strategy accordingly. Furthermore, having volatility information between earning and non-earning seasons helps investors analyze patterns and market fluctuations between long time frames in order to predict the optimal allocations for their investments. 
+
+Our question of interest states: During earnings periods (e.g., January, April, July, October), do the stock prices of these companies experience larger fluctuations compared to non-earnings periods (e.g., February, March, May, November). Our study aims to determine if earnings periods, compared to non-earnings periods, significantly affect stock price volatility for FAANG companies from 2012 to 2020, utilizing daily percentage changes in opening prices and the Difference in Means methodology. 
+
+Our findings suggest that there is no significant relationship between the mean variation of stock prices between earnings and non earning periods from 2012 to 2020. 
+
+^[https://blog.researchandranking.com/90-percent-lose-money-in-stocks/]
+
+
+# Background
+
+For our analysis, we decided to look into the stock prices in earning and non-earning periods from May 17, 2012 to August 02, 2020. The earning period includes January, April, July, October. The non-earning period includes February, March, May, and November. We observed this specific time period due to the fact that this range contains the complete data for all five FAANG companies we want to observe in our analysis.
+
+The dataset was collected through web scraping of financial data from Yahoo Finance. This web scraping process involved extracting information related to the stock prices of the five prominent companies known as FAANG, which includes Facebook, Amazon, Apple, Netflix, and Google. Each case in the dataset represents a specific date or trading day. The dataset likely includes multiple rows, each corresponding to a different trading day, for each of the five FAANG companies. Each row contains various information about the stock prices and trading volumes for each trading day from 1980s - 2020s (depending on the company), we will be looking at the dataset from 2012-2020 since that is the earliest available data for all five companies.
+
+^[https://corporatefinanceinstitute.com/resources/valuation/earnings-season/]
+
+# Data context: 
+
+The key variables in our project are opening price, closing price, high price, low price, and date. The opening price is the price of a stock at the beginning of the trading day. The closing price is the price of a stock at the end of the trading day. The high price is the highest price reached by the stock during the trading day. The low price is the lowest price reached by the stock during the trading day. The date is the date of the trading day for which the stock price data is recorded. The data size of the dataset consists of multiple CSV files, with each file corresponding to one of the five FAANG companies. Each CSV file contains historical stock price data, typically with multiple rows, where each row represents a trading day. The total size of the dataset would depend on the time period covered but could include several years of daily trading data for each company.
+
+Our data website: ^[https://www.kaggle.com/datasets/aayushmishra1512/faang-complete-stock-data]
+
+
+# Report context: 
+
+To fully grasp the question we are posing in this project, we have to understand what an earning period is. An earning season is the time when public companies release their quarterly earnings report. This new piece of information is  important because it can create volatility in the market. Another clarification to make is how we define “large fluctuations”. We will determine this by looking at the magnitude of change between the stock prices of the earning period vs the non earning period. In our question we explicitly state that we will be analyzing data from the five FAANG companies. The reason we narrowed it down to only those five was because these companies are the largest and most successful globally, and we were able to find solid data from these companies to use in our analysis. Lastly, we chose the time period of May 17, 2012 to August 02, 2020 because in order to effectively compare the five FAANG companies, we had to make sure we have complete data from all five companies.
+
+There are several outlying factors that could influence our results but the four that have probably been the most obvious and well-known factors during recent times are the 2016 and 2020 Presidential elections, COVID-19, global political and economic conditions, and each of the FAANG companies' individual policies have all influenced their stock market trends in one way or another. Hence, it’s impossible to say that our results would be 100% accurate.
+
+In the report's next phases, we will analyze stock price changes for FAANG companies from 2012 to 2020. Using graphs and stats like daily stock prices and market shifts, we will compare between earnings and non-earnings seasons. Using the information we find during these periods, we will create a statistical summary regarding our findings, considering any unusual circumstances in the data and suggesting ways to improve it.
+
+  
+
+# Graph
+
+We first read stock price data from our company csv files, and only include data from 2012-5-18 to 2020-08-18 (This is the earliest and latest dates for which we have readings from every company). We then create summary tables that group by year and period and calculate the average absolute percentage change from Open price to Close price for that period.
+
+```{r, include = FALSE}
+Amazon_data = read_csv("~/Desktop/stat240/final_project/data/Amazon.csv")
+tidy_Amazon = Amazon_data %>%
+  filter(between(Date, as.Date("2012-05-18"), as.Date("2020-08-18")))
+```
+
+```{r, include = FALSE}
+Apple_data = read_csv("~/Desktop/stat240/final_project/data/Apple.csv")
+tidy_Apple = Apple_data %>%
+  filter(between(Date, as.Date("2012-05-18"), as.Date("2020-08-18")))
+```
+
+```{r, include = FALSE}
+Facebook_data = read_csv("~/Desktop/stat240/final_project/data/Facebook.csv")
+tidy_Facebook = Facebook_data %>%
+  filter(between(Date, as.Date("2012-05-18"), as.Date("2020-08-18")))
+```
+
+```{r, include = FALSE}
+Google_data = read_csv("~/Desktop/stat240/final_project/data/Facebook.csv")
+tidy_Google = Google_data %>%
+  filter(between(Date, as.Date("2012-05-18"), as.Date("2020-08-18")))
+```
+
+```{r, include = FALSE}
+Netflix_data = read_csv("~/Desktop/stat240/final_project/data/Netflix.csv")
+tidy_Netflix = Netflix_data %>%
+  filter(between(Date, as.Date("2012-05-18"), as.Date("2020-08-18")))
+```
+
+
+```{r, include = FALSE}
+tidy_Amazon <- tidy_Amazon %>%
+  mutate(Period = case_when(
+    month(Date) %in% c(1, 4, 7, 10) ~ "EP",
+    month(Date) %in% c(2, 3, 5, 6, 8, 9, 11, 12) ~ "NEP"
+  ))
+
+# Summary for Amazon
+summary_Amazon <- tidy_Amazon %>%
+  # Filter for relevant months
+  filter(Period %in% c("EP", "NEP")) %>%
+  # Group by Year and Period
+  group_by(Year = year(Date), Period) %>%
+  # Calculate the percentage change
+  summarize(Percentage_Change = abs(mean((Close - Open) / Open * 100))) %>%
+  ungroup()
+
+
+```
+
+```{r, include = FALSE}
+tidy_Apple <- tidy_Apple %>%
+  mutate(Period = case_when(
+    month(Date) %in% c(1, 4, 7, 10) ~ "EP",
+    month(Date) %in% c(2, 3, 5, 6, 8, 9, 11, 12) ~ "NEP"
+  ))
+
+# Summary for Amazon
+summary_Apple <- tidy_Apple %>%
+  # Filter for relevant months
+  filter(Period %in% c("EP", "NEP")) %>%
+  # Group by Year and Period
+  group_by(Year = year(Date), Period) %>%
+  # Calculate the percentage change
+  summarize(Percentage_Change = abs(mean((Close - Open) / Open * 100))) %>%
+  ungroup()
+
+summary_Apple
+```
+
+```{r, include = FALSE}
+tidy_Facebook <- tidy_Facebook %>%
+  mutate(Period = case_when(
+    month(Date) %in% c(1, 4, 7, 10) ~ "EP",
+    month(Date) %in% c(2, 3, 5, 6, 8, 9, 11, 12) ~ "NEP"
+  ))
+
+# Summary for Amazon
+summary_Facebook <- tidy_Facebook %>%
+  # Filter for relevant months
+  filter(Period %in% c("EP", "NEP")) %>%
+  # Group by Year and Period
+  group_by(Year = year(Date), Period) %>%
+  # Calculate the percentage change
+  summarize(Percentage_Change = abs(mean((Close - Open) / Open * 100))) %>%
+  ungroup()
+
+summary_Facebook
+```
+
+```{r, include = FALSE}
+tidy_Google <- tidy_Google %>%
+  mutate(Period = case_when(
+    month(Date) %in% c(1, 4, 7, 10) ~ "EP",
+    month(Date) %in% c(2, 3, 5, 6, 8, 9, 11, 12) ~ "NEP"
+  ))
+
+# Summary for Amazon
+summary_Google <- tidy_Google %>%
+  # Filter for relevant months
+  filter(Period %in% c("EP", "NEP")) %>%
+  # Group by Year and Period
+  group_by(Year = year(Date), Period) %>%
+  # Calculate the percentage change
+  summarize(Percentage_Change = abs(mean((Close - Open) / Open * 100))) %>%
+  ungroup()
+
+summary_Google
+```
+
+```{r, include = FALSE}
+tidy_Netflix <- tidy_Netflix %>%
+  mutate(Period = case_when(
+    month(Date) %in% c(1, 4, 7, 10) ~ "EP",
+    month(Date) %in% c(2, 3, 5, 6, 8, 9, 11, 12) ~ "NEP"
+  ))
+
+# Summary for Amazon
+summary_Netflix <- tidy_Netflix %>%
+  # Filter for relevant months
+  filter(Period %in% c("EP", "NEP")) %>%
+  # Group by Year and Period
+  group_by(Year = year(Date), Period) %>%
+  # Calculate the percentage change
+  summarize(Percentage_Change = abs(mean((Close - Open) / Open * 100))) %>%
+  ungroup()
+
+summary_Netflix
+```
+
+
+To better examine the distribution of variation for each of these periods, it would be useful to plot them against each other, as a boxplot. This would let us examine the distribution of each group side by side
+
+### Key aspects of the boxplot:
+
+* X-axis: Represents the year.
+* Y-axis: Shows the absolute mean percentage change in stock price.
+* Boxplot Structure: Each box shows the median, quartiles, and outliers in the percentage change data for each year and period.
+* Color Coding: Different colors for EP and NEP (blue for EP, red for NEP) allow for quick visual distinction.
+This boxplot is particularly effective in showing how the variability in stock price changes differs between earning and non-earning periods over the years. It allows for a quick visual comparison of trends and variances across different periods.
+
+The average fluctuation is calculated separately for earnings months and non-earnings months, where earnings months typically include periods such as January, April, July, and October, and non-earnings months include months like February, March, May, and November.
+
+
+```{r, echo = FALSE}
+ggplot(summary_Amazon, aes(x = Period, y = Percentage_Change, fill = Period)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Amazon Stock Price Change Boxplot",
+       x = "Earning vs. Non-Earning Periods",
+       y = "Percentage Change") +
+  scale_fill_manual(values = c("EP" = "blue", "NEP" = "red"))
+```
+
+As we can see for Amazon, there seems to be a broader range of percentage changes for Earning Periods, while the Non Earning Periods have some outliers in a similar range.
+
+
+```{r, echo = FALSE}
+ggplot(summary_Apple, aes(x = Period, y = Percentage_Change, fill = Period)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Apple Stock Price Change Boxplot",
+       x = "Earning vs. Non-Earning Periods",
+       y = "Percentage Change") +
+  scale_fill_manual(values = c("EP" = "blue", "NEP" = "red"))
+```
+
+For Apple, it seems that the distribution is very similar, with the median for Earnings Periods being lower than Non Earnings Periods.
+
+
+```{r, echo = FALSE}
+ggplot(summary_Facebook, aes(x = Period, y = Percentage_Change, fill = Period)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Facebook Stock Price Change Boxplot",
+       x = "Earning vs. Non-Earning Periods",
+       y = "Percentage Change") +
+  scale_fill_manual(values = c("EP" = "blue", "NEP" = "red"))
+```
+
+For Facebook, the Earnings Periods distribution is slightly above the Non Earnings Period but by a small value, their range of distribution is relatively similar.
+
+
+```{r, echo = FALSE}
+ggplot(summary_Google, aes(x = Period, y = Percentage_Change, fill = Period)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Google Stock Price Change Boxplot",
+       x = "Earning vs. Non-Earning Periods",
+       y = "Percentage Change") +
+  scale_fill_manual(values = c("EP" = "blue", "NEP" = "red"))
+```
+
+For Google, the situation is very similar to that of Facebook, with similar ranges and small differences.
+
+
+```{r, echo = FALSE}
+ggplot(summary_Netflix, aes(x = Period, y = Percentage_Change, fill = Period)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Netflix Stock Price Change Boxplot",
+       x = "Earning vs. Non-Earning Periods",
+       y = "Percentage Change") +
+  scale_fill_manual(values = c("EP" = "blue", "NEP" = "red"))
+```
+
+For Netflix, the Non Earning Periods values seem to be more concentrated around the median, showing that there isn't as much variation in how much the percentage changes from day to day during this time. The Earning Periods have what seems to be a larger distribution of percentages, but the median is still relatively close to that of Non Earnings Periods.
+
+
+```{r, echo = FALSE}
+combined_summary <- rbind(
+  summary_Amazon %>% mutate(Company = "Amazon"),
+  summary_Apple %>% mutate(Company = "Apple"),
+  summary_Facebook %>% mutate(Company = "Facebook"),
+  summary_Google %>% mutate(Company = "Google"),
+  summary_Netflix %>% mutate(Company = "Netflix")
+)
+
+ggplot(combined_summary, aes(x = Company, y = Percentage_Change, fill = Period)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Comparison of Stock Price Change Across Companies",
+       x = "Company",
+       y = "Percentage Change") +
+  scale_fill_manual(values = c("EP" = "blue", "NEP" = "red")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Optional: Rotate x-axis labels for readability
+```
+
+From this summary graph, we can see that Netflix's earning period seems to have the largest range of fluctuations overall. Furthermore, all the earnings periods demonstrate a similar trend of having large outliers.
+
+
+```{r include = FALSE}
+
+company_names <- c("Amazon", "Facebook", "Google", "Netflix", "Apple")
+
+# Loop through each company
+for (company in company_names) {
+  # Create the table name dynamically
+  table_name <- paste("summary_", company, sep = "")
+  
+  # Create the pivot table name dynamically
+  pivot_table_name <- paste("pivot_", company, sep = "")
+  
+  # Pivot the table
+  assign(pivot_table_name, get(table_name) %>%
+           pivot_wider(names_from = Period, values_from = Percentage_Change))
+}
+
+
+
+pivot_names <- c("Amazon", "Facebook", "Google", "Netflix", "Apple")
+```
+
+
+> To get some more information, let us plot these percentages, EP vs NEP, year by year.
+
+The box plots are useful for examining the distribution of stock price changes overall for our entire time period. However, we can't infer too much on how these two periods directly compare to each other as time progresses. Hence, we could use a line graph
+
+A line graph could complement this by showing how the average fluctuation changes year over year, providing a clear picture of upward or downward trends.
+
+
+```{r, echo = FALSE}
+# Function to create and display the plot
+create_and_display_plot <- function(pivot_table, company_name) {
+  avg_fluctuation <- pivot_table %>%
+    group_by(Year) %>%
+    summarise(
+      Avg_Fluctuation_Earnings = mean(EP),
+      Avg_Fluctuation_NonEarnings = mean(NEP)
+    )
+  
+  ggplot(avg_fluctuation, aes(x = Year)) +
+    geom_line(aes(y = Avg_Fluctuation_Earnings, color = "Earnings Months")) +
+    geom_line(aes(y = Avg_Fluctuation_NonEarnings, color = "Non-Earnings Months")) +
+    labs(title = paste("Average Stock Price Percent Change Over Time -", company_name),
+         x = "Year",
+         y = "Fluctuation in Stock Prices",
+         color = "Legend") +
+    scale_color_manual(values = c("Earnings Months" = "blue", "Non-Earnings Months" = "red")) +
+    theme_minimal()
+}
+```
+
+For Amazon, we can see that they follow a similar trend up until 2016 when Earnings Months stay above the Non-Earnings Months until they meet at 2020.
+
+```{r, echo = FALSE}
+# Create and display plots for each company
+plot_Amazon <- create_and_display_plot(pivot_Amazon, "Amazon")
+print(plot_Amazon)
+```
+
+The Apple distribution for both periods are relatively consistent in it's range of percentage changes for most of our data, except at 2020 where for Non Earnings Periods the percetnage change increased considerably more overall.
+
+```{r, echo = FALSE}
+plot_Apple <- create_and_display_plot(pivot_Apple, "Apple")
+print(plot_Apple)
+```
+
+For Facebook, the lines are relatively similar, with our fluctuation staying in a similar range year by year.
+
+```{r, echo = FALSE}
+plot_Facebook <- create_and_display_plot(pivot_Facebook, "Facebook")
+print(plot_Facebook)
+```
+
+Google follows a similar trend as facebook where the distribution remains similar over time.
+
+```{r, echo = FALSE}
+plot_Google <- create_and_display_plot(pivot_Google, "Google")
+print(plot_Google)
+```
+
+For Netflix, there is a considerably large difference in 2012 for Earnings Months, but our distribution starts looking similar for the following years.
+
+
+```{r, echo = FALSE}
+plot_Netflix <- create_and_display_plot(pivot_Netflix, "Netflix")
+print(plot_Netflix)
+```
+
+
+The "Annual Stock Price Fluctuation Trends by Company (Earnings Months)" graph provides a visual comparison of average earnings month stock price fluctuations for five major tech companies over eight years. The graph reveals an initial high volatility in 2012, particularly for Netflix, followed by a period of stabilization. While stock price movements became less erratic over time, Netflix displayed a notable spike in 2015, indicating a year of significant change. The trend lines of Amazon, Apple, and Google flattened towards the end of the decade, suggesting more predictable reactions to earnings announcements in recent years.
+
+```{r, echo = FALSE}
+# Function to create summaries
+create_summary <- function(pivot_table, company_name) {
+  pivot_table %>%
+    group_by(Year) %>%
+    summarise(
+      Avg_Fluctuation_Earnings = mean(EP),
+      Avg_Fluctuation_NonEarnings = mean(NEP)
+    ) %>%
+    mutate(Company = company_name)
+}
+
+# Summaries for each company
+summary2_Amazon <- create_summary(pivot_Amazon, "Amazon")
+summary2_Apple <- create_summary(pivot_Apple, "Apple")
+summary2_Facebook <- create_summary(pivot_Facebook, "Facebook")
+summary2_Google <- create_summary(pivot_Google, "Google")
+summary2_Netflix <- create_summary(pivot_Netflix, "Netflix")
+
+# Combine the summaries
+combined_fluctuation <- rbind(
+  summary2_Amazon,
+  summary2_Apple,
+  summary2_Facebook,
+  summary2_Google,
+  summary2_Netflix
+)
+
+# Earnings Months
+ggplot(combined_fluctuation, aes(x = Year, color = Company)) +
+  geom_line(aes(y = Avg_Fluctuation_Earnings)) +
+  labs(title = "Annual Stock Price Fluctuation Trends by Company (Earnings Months)",
+       subtitle = "Comparison of Average Fluctuations During Earnings Months",
+       x = "Year",
+       y = "Average Fluctuation (%)",
+       color = "Company") +
+  scale_color_manual(values = c("Amazon" = "blue", "Apple" = "green", "Facebook" = "red", "Google" = "purple", "Netflix" = "orange")) +
+  theme_minimal() +
+  guides(color = guide_legend(title = "Company"))
+```
+
+The "Annual Stock Price Fluctuation Trends by Company (Non-Earnings Months)" graph compares the average fluctuations in stock prices for the FAANG companies during the months they do not report earnings, from 2012 to 2020. The graph shows a decrease in fluctuation from the initial year across all companies, moving toward a more stable trend. However, nearing 2020, some companies, especially Apple and Netflix, exhibit a sharp increase in fluctuation, hinting at heightened volatility. The graph illustrates the differing patterns of stock price behavior in non-earnings periods, which may be affected by market trends, investor behavior, and other non-earnings related news.
+
+```{r, echo = FALSE}
+# Non-Earnings Months
+ggplot(combined_fluctuation, aes(x = Year, color = Company)) +
+  geom_line(aes(y = Avg_Fluctuation_NonEarnings), linetype = "dashed") +
+  labs(title = "Annual Stock Price Fluctuation Trends by Company (Non-Earnings Months)",
+       subtitle = "Comparison of Average Fluctuations During Non-Earnings Months",
+       x = "Year",
+       y = "Average Fluctuation (%)",
+       color = "Company") +
+  scale_color_manual(values = c("Amazon" = "blue", "Apple" = "green", "Facebook" = "red", "Google" = "purple", "Netflix" = "orange")) +
+  theme_minimal() +
+  guides(color = guide_legend(title = "Company"))
+```
+
+
+
+
+
+# Analysis
+We will now conduct a difference of means t test between the Earning Periods and Non Earning Periods values for each company to see if there is a significant likelihood that their means vary.
+The Null Hypothesis is that there is no significant difference between the means of the two groups for a given company.
+The alternative Hypothesis is that there is a significant difference between the means of the two groups for a given company.
+
+[hypotheses]
+
+$H_0$: $\mu_{EP} = \mu_{NEP}$
+
+The mean stock price fluctuation during the earning period ($\mu_{EP}$) is equal to the mean fluctuation during the non-earning period ($\mu_NEP$) for each companies.
+
+$H_a$: $\mu_{EP} ≠ \mu_{NEP}$
+
+The mean stock price fluctuation during the earning period ($\mu_{EP}$) is not equal to the mean fluctuation during the non-earning period ($\mu_{NEP}$) for each companies.
+
+The Null Hypothesis is that the average stock price fluctuation during earning periods is exactly the same as during non-earning periods for each of the FAANG companies. Conversely, the Alternative Hypothesis posits that the true difference in means between these two periods is not equal to 0. The test statistic is calculated as the difference in the mean stock price fluctuation between earning and non-earning periods, divided by the standard error of this difference. In addition to reporting the p-value, we will provide the observed difference in means and the corresponding t statistic, which together give us a fuller understanding of the fluctuations' behavior and significance.
+
+
+[p-value]
+
+```{r, include = FALSE}
+company_names <- c("Amazon", "Facebook", "Google", "Netflix", "Apple")
+
+for (company in company_names) {
+  summary_data <- get(paste0("summary_", company))
+  
+  ep_data <- summary_data %>% filter(Period == "EP") %>% select(Percentage_Change)
+  nep_data <- summary_data %>% filter(Period == "NEP") %>% select(Percentage_Change)
+  
+  t_test_results <- t.test(ep_data$Percentage_Change, nep_data$Percentage_Change, var.equal = FALSE)
+  
+  cat("Company:", company, "\n")
+  cat("t-statistic:", t_test_results$statistic, "\n")
+  cat("p-value:", t_test_results$p.value, "\n")
+  cat("95% confidence interval:", toString(t_test_results$conf.int), "\n")
+  
+  mean_difference <- mean(ep_data$Percentage_Change) - mean(nep_data$Percentage_Change)
+  cat("Difference in means:", mean_difference, "\n\n")
+}
+```
+
+The statistical analysis for Amazon revealed no significant difference in stock price fluctuations between Earning and Non-Earning Periods (p = 0.1417387), with a 95% confidence interval for the true mean difference ranging from -0.0226 to 0.1414. Similar non-significant results were observed for Facebook (p = 0.2433222, CI: -0.0967 to 0.3399), Google (p = 0.2433222, CI: -0.0967 to 0.3399), Netflix (p = 0.1170345, CI: -0.0671 to 0.5064), and Apple (p = 0.6102632, CI: -0.1296 to 0.0787). These findings suggest that there is no strong statistical evidence to support a difference in stock price movements during these periods for the companies analyzed.
+
+In summary, our analysis does not provide overwhelming evidence to suggest significant differences in stock price fluctuations between Earning and Non-Earning Periods for any of the FAANG companies within the specified confidence intervals. These results are in line with our graphical analyses, which do not show stark contrasts between the two periods for these companies.
+
+# Summary
+
+This graph highlights the distribution of stock price fluctuations for the FAANG companies during Earning and Non-Earning Periods.
+
+```{r, echo = FALSE}
+tidy_longer <- combined_fluctuation %>%
+  pivot_longer(
+    cols = c("Avg_Fluctuation_Earnings", "Avg_Fluctuation_NonEarnings"),
+    names_to = 'Period_Type',
+    values_to = 'Fluctuation'
+  ) %>%
+  mutate(Period_Type = recode(Period_Type, 
+                              'Avg_Fluctuation_Earnings' = 'Average_Fluctuation_Earnings', 
+                              'Avg_Fluctuation_NonEarnings' = 'Average_Fluctuation_NonEarnings'))
+
+ggplot(tidy_longer, aes(x = Fluctuation, fill = Period_Type)) +
+  geom_density() +
+  facet_wrap(~ Period_Type, scales = 'free') +
+  labs(
+    x = 'Percentage Change in Stock Price',
+    y = 'Density',
+    title = 'Density of Stock Price Percentage Change',
+    subtitle = 'Comparing Earning and Non-Earning Periods',
+    fill = 'Period Type'
+  ) +
+  scale_fill_manual(values = c('Average_Fluctuation_Earnings' = 'lightpink', 'Average_Fluctuation_NonEarnings' = 'lightblue')) +
+  theme_minimal()
+```
+
+We observe that the distribution of average fluctuations during Earning Periods is quite distinct from those during Non-Earning Periods. Specifically, a substantial proportion of fluctuations during Earning Periods are centered around lower percentages, indicating a tendency towards stability in stock prices when earnings are reported. In contrast, Non-Earning Periods show a peak at a slightly higher percentage change, suggesting increased variability and potentially higher volatility when earnings are not being disclosed. This visualization supports our statistical analysis, indicating that while the mean fluctuations may not differ significantly, the spread and concentration of these fluctuations vary between Earning and Non-Earning Periods, underscoring the impact of earnings announcements on stock price behavior.
+
+### Interpretation:
+
+Our analysis explores whether earnings periods yielded a substantial influence on stock price fluctuations for FAANG companies from 2012 to 2020 over non-earning periods. The statistical summary, when compared between earning and non-earning periods, aims to showcase whether there's a notable difference in stock price movements during these distinct times. If the graphs demonstrate greater volatility (rapid/unpredictable changes) in stock prices during earnings seasons, it implies a potential correlation between earning announcements and stock market reactions and investors would be less likely to invest. Through our analysis, we discovered that there was not a significant difference in the market between earning and non-earning seasons, thus our research would not be as useful to investors as we had believed it to be initially. It does not help with risk assessment which is the main problem most investors have to deal with for successful investments.
+
+### Shortcomings:
+
+While we have tried our best to show the relationship between earning seasons and stock price volatility, it's necessary to acknowledge the barriers that we had to confront. The project primarily focuses on earnings-related fluctuations, but it might overlook other crucial factors influencing stock prices, such as broader economic trends, market reactions, or unexpected company-specific developments. Furthermore, our ability to attribute all fluctuations solely to earning and non-earning seasons might be constrained. Additionally, the dataset's time frame does not consider all relevant market dynamics, potentially limiting the comprehensiveness of our conclusions and it also does not have the full year’s data for 2012 and 2020. Furthermore, we only have five companies to analyze for each group (earning period and non-earning period) which means the number of observations we can analyze  for each of the groups would be limited. Understanding these limitations is essential in order to interpret the results we discovered.
+
+### Future directions:
+In this project, we analyzed stock price fluctuations in earning vs non-earning periods. This question effectively sets the basis to explore additional questions more in depth. In the future, when we have records of more data, we can observe the stock prices a few years prior to, during, and years post the coronavirus pandemic. This data would be interesting to observe in terms of unemployment rates because of how drastically unemployment changed during these time periods and how earning periods were impacted by these changes. An additional question we can explore is: Are there significant differences in the stock price fluctuations of FAANG companies (Facebook, Amazon, Apple, Netflix, and Google) during their earnings seasons? This question would help us view the differences between the companies and find the causes for these differences. An important factor that could be driving these differences is each company's business models and plans. A method we can use is analyzing the volatility of the earning vs non-earning periods. This would provide us more insight on how the prices fluctuate over time. The most helpful data we can collect to refine our understanding would definitely be stock price fluctuations post coronavirus because it would show us how stock prices are impacted by economic depressions. 
+
+# Conclusion:
+
+The primary conclusion we can draw from our analysis is that overall, there is no significant difference between the earning vs non-earning period for each company. This can be explained by comparing the means of the two periods where the p-values are at a range that accept the null hypothesis across all the companies. Since the p-values of all five FAANG companies are above 0.05 (the significance level), we don’t have strong statistical evidence to reject the null hypothesis that there is no significant difference between the means of the two groups for a given company. Additionally, if we compare the median line of the earning period to the non-earning period, the line, if dotted across, lies in the boxplot range of the non-earning period across all companies except Netflix. This shows that for the most part, these likely isn’t a significant difference between the two groups. Lastly, if we look at the average fluctuation in prices by year in the line graphs, we can see that there is no clear pattern indicating a trend that either of the two periods follow. This supports the analysis conclusion that we find no significant difference between the two periods. 
+
+# References
+# Earnings-Season-Stock-Price-Volatility-Analysis
+# Earnings-Season-Stock-Price-Volatility-Analysis
+#Earnings Season Stock Price Volatility Analysis
